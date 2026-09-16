@@ -1,100 +1,62 @@
 package com.projeto.ecommerceapii.service;
 
-import com.projeto.ecommerceapii.dto.ResponseItemPedidoDTO;
 import com.projeto.ecommerceapii.dto.itemPedido.CreateItemPedidoDTO;
 import com.projeto.ecommerceapii.dto.pedido.CreatePedidoDTO;
 import com.projeto.ecommerceapii.dto.pedido.ResponsePedidoDTO;
 import com.projeto.ecommerceapii.entity.*;
 import com.projeto.ecommerceapii.exception.BadRequestException;
 import com.projeto.ecommerceapii.exception.EntityNotFoundException;
+import com.projeto.ecommerceapii.mapper.pedido.PedidoMapper;
 import com.projeto.ecommerceapii.repository.ClienteRepository;
 import com.projeto.ecommerceapii.repository.ItemPedidoRepository;
 import com.projeto.ecommerceapii.repository.PedidoRepository;
 import com.projeto.ecommerceapii.repository.ProdutoRepository;
-
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class PedidoService {
 
-    @Autowired
-    private PedidoRepository pedidoRepository;
+    private final PedidoRepository pedidoRepository;
+    private final ItemPedidoRepository itemPedidoRepository;
+    private final ProdutoRepository produtoRepository;
+    private final ClienteRepository clienteRepository;
+    private final PedidoMapper pedidoMapper;
 
-    @Autowired
-    private ItemPedidoRepository itemPedidoRepository;
 
-    @Autowired
-    private ProdutoRepository produtoRepository;
+    public PedidoService(
+            PedidoRepository pedidoRepository,
+            ItemPedidoRepository itemPedidoRepository,
+            ProdutoRepository produtoRepository,
+            ClienteRepository clienteRepository,
+            PedidoMapper pedidoMapper){
 
-    @Autowired
-    private ClienteRepository clienteRepository;
+        this.pedidoRepository = pedidoRepository;
+        this.itemPedidoRepository = itemPedidoRepository;
+        this.produtoRepository = produtoRepository;
+        this.clienteRepository = clienteRepository;
+        this.pedidoMapper = pedidoMapper;
+
+
+    }
 
     public Page<ResponsePedidoDTO> findAll(Integer paginas, Integer itens){
 
         Page<Pedido> pedidos = pedidoRepository.findAll(PageRequest.of(paginas,itens));
 
-        /*
-        List<ResponseItemPedidoDTO> novosItens = pedidos.stream().flatMap(pedido -> pedido.getItens().stream()).map(
-                itemPedido -> new ResponseItemPedidoDTO(
-                        itemPedido.getId(),itemPedido.getProduto().getNome(),itemPedido.getQuantidade(),itemPedido.getPrecoUnitario()
-                )
-        ).toList();
-
-         */
-
-        Page<ResponsePedidoDTO> response = pedidos.map(pedido -> {
-
-           List<ResponseItemPedidoDTO> itens2 = pedido.getItens().stream().map(
-                   itemPedido -> new ResponseItemPedidoDTO(
-                           itemPedido.getId(),itemPedido.getProduto().getNome(),
-                           itemPedido.getQuantidade(),itemPedido.getPrecoUnitario())
-           ).toList();
-
-           return new ResponsePedidoDTO(
-                   pedido.getId(),
-                   pedido.getData(),
-                   pedido.getStatus(),
-                   pedido.getTotal(),
-                   itens2
-           );
-        });
-
-
-
-
-        /*
-        Page<ResponsePedidoDTO> response = pedidos.map(pedido -> new ResponsePedidoDTO(
-                pedido.getId(),pedido.getData(),pedido.getStatus(),pedido.getTotal(),novosItens
-        ));
-
-         */
-
-
-        return  response;
+        return pedidos.map(pedidoMapper::toResponse);
     }
 
     public ResponsePedidoDTO findById(Long id){
 
-        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Pedido não encotrado"));
+        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() ->
+                new EntityNotFoundException("Pedido não encotrado"));
 
-        List<ResponseItemPedidoDTO> itens = pedido.getItens().stream()
-                .map(itemPedido ->
-                        new ResponseItemPedidoDTO(
-                                itemPedido.getId(),itemPedido.getProduto().getNome(),
-                                itemPedido.getQuantidade(), itemPedido.getPrecoUnitario())).toList();
-
-        return new ResponsePedidoDTO(pedido.getId(),pedido.getData(),pedido.getStatus(),pedido.getTotal(),itens);
+        return pedidoMapper.toResponse(pedido);
     }
-
-
 
     @Transactional
     public ResponsePedidoDTO create(CreatePedidoDTO pedidoDTO) throws BadRequestException {
@@ -109,9 +71,6 @@ public class PedidoService {
         pedido.setStatus(Status.PENDENTE);
 
         pedidoRepository.save(pedido);
-
-
-        List<ResponseItemPedidoDTO> list = new ArrayList<>();
 
         for(CreateItemPedidoDTO dto : pedidoDTO.itens()){
 
@@ -136,16 +95,9 @@ public class PedidoService {
             itemPedidoRepository.save(itemPedido);
 
 
-            ResponseItemPedidoDTO itemDTo = new ResponseItemPedidoDTO(
-                    itemPedido.getId(),itemPedido.getProduto().getNome(),
-                    itemPedido.getQuantidade(), itemPedido.getPrecoUnitario());
-
-            list.add(itemDTo);
-
         }
 
-
-        return new ResponsePedidoDTO(pedido.getId(),pedido.getData(),pedido.getStatus(),pedido.getTotal(),list);
+        return pedidoMapper.toResponse(pedido);
     }
 
 
