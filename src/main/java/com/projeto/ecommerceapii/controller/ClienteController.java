@@ -23,12 +23,12 @@ public class ClienteController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseCreateClienteDTO> create(@RequestBody CreateClienteDTO dto) throws BadRequestException {
+    public ResponseEntity<ResponseCLienteDTO> create(@RequestBody CreateClienteDTO dto) throws BadRequestException {
         return ResponseEntity.ok(service.create(dto));
     }
 
     @PutMapping(value = "/{id}")
-    public ResponseEntity<ResponseUpdateCliente> update(@PathVariable Long id, @RequestBody CreateClienteDTO dto){
+    public ResponseEntity<ResponseCLienteDTO> update(@PathVariable Long id, @RequestBody CreateClienteDTO dto){
         return ResponseEntity.ok(service.update(id,dto));
     }
 
