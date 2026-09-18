@@ -1,5 +1,6 @@
 package com.projeto.ecommerceapii.service;
 
+import com.projeto.ecommerceapii.config.JWTUserData;
 import com.projeto.ecommerceapii.dto.itemPedido.CreateItemPedidoDTO;
 import com.projeto.ecommerceapii.dto.pedido.CreatePedidoDTO;
 import com.projeto.ecommerceapii.dto.pedido.ResponsePedidoDTO;
@@ -12,8 +13,10 @@ import com.projeto.ecommerceapii.repository.ItemPedidoRepository;
 import com.projeto.ecommerceapii.repository.PedidoRepository;
 import com.projeto.ecommerceapii.repository.ProdutoRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.security.core.Authentication;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
@@ -45,15 +48,51 @@ public class PedidoService {
 
     public Page<ResponsePedidoDTO> findAll(Integer paginas, Integer itens){
 
-        Page<Pedido> pedidos = pedidoRepository.findAll(PageRequest.of(paginas,itens));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        JWTUserData userData =
+                (JWTUserData) authentication.getPrincipal();
+
+        Page<Pedido> pedidos;
+
+        System.out.println("USER ID: " + userData.userId());
+        System.out.println("CLIENTE ID: " + userData.clienteId());
+        System.out.println("EMAIL: " + userData.email());
+        System.out.println("ROLE: " + userData.role());
+
+        if(userData.role().equals("ADMIN")){
+            pedidos = pedidoRepository.findAll(PageRequest.of(paginas,itens));
+
+            return pedidos.map(pedidoMapper::toResponse);
+        }
+
+       pedidos = pedidoRepository.findAllByClienteId(
+                userData.clienteId(),
+                PageRequest.of(paginas, itens)
+        );
+
 
         return pedidos.map(pedidoMapper::toResponse);
     }
 
     public ResponsePedidoDTO findById(Long id){
 
-        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() ->
-                new EntityNotFoundException("Pedido não encotrado"));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        JWTUserData userData =
+                (JWTUserData) authentication.getPrincipal();
+
+        //System.out.println("Authentication: " + authentication);
+        System.out.println("UserData : " + userData);
+        Pedido pedido;
+
+        if(userData.role().equals("ADMIN")){
+            pedido = pedidoRepository.findById(id).orElseThrow(() ->
+                    new EntityNotFoundException("Pedido não encotrado"));
+        }else {
+            pedido = pedidoRepository.findByIdAndClienteId(id, userData.clienteId())
+                    .orElseThrow(() -> new EntityNotFoundException("pedido do cliente não encotrado..."));
+        }
 
         return pedidoMapper.toResponse(pedido);
     }
@@ -61,7 +100,14 @@ public class PedidoService {
     @Transactional
     public ResponsePedidoDTO create(CreatePedidoDTO pedidoDTO) throws BadRequestException {
 
-        Cliente cliente = clienteRepository.findById(pedidoDTO.clienteId())
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        JWTUserData userData = (JWTUserData) authentication.getPrincipal();
+        Long clienteId = userData.clienteId();
+
+
+
+        Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado"));
 
         Pedido pedido = new Pedido();

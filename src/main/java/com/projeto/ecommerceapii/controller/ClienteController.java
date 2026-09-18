@@ -7,6 +7,7 @@ import com.projeto.ecommerceapii.dto.cliente.ResponseUpdateCliente;
 import com.projeto.ecommerceapii.service.ClienteService;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,11 @@ public class ClienteController {
     @GetMapping(value = "/{id}")
     public ResponseEntity<ResponseCLienteDTO> findById(@PathVariable Long id){
         return ResponseEntity.ok(service.findById(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<ResponseCLienteDTO>> findAll(Integer pagina, Integer itens){
+        return ResponseEntity.ok(service.findAll(pagina,itens));
     }
 
     @PostMapping

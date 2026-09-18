@@ -11,6 +11,17 @@ INSERT INTO cliente (nome, email, cpf) VALUES
                                            ('Carlos Santos', 'carlos@email.com', '34567890123'),
                                            ('Ana Oliveira', 'ana@email.com', '45678901234'),
                                            ('Pedro Lima', 'pedro@email.com', '56789012345');
+/*
+INSERT INTO users (email,senha,role,cliente_id) VALUES
+                                                    ('joao@email.com', "123456","CLIENTE", 1),
+                                                    ('maria@email.com',"123456", "CLIENTE", 2),
+                                                    ('carlos@email.com',"123456", "CLIENTE", 3),
+                                                    ('ana@email.com',"123456", "CLIENTE", 4),
+                                                    ('pedro@email.com',"123456", "ADMIN", 5);
+
+ */
+
+
 
 INSERT INTO produto
 (nome, preco, estoque, categoria_id, descricao, ativo)

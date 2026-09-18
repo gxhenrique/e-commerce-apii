@@ -8,7 +8,5 @@ import java.util.List;
 public record CreatePedidoDTO(
 
         @NotNull
-        Long clienteId,
-        @NotNull
         List<CreateItemPedidoDTO> itens) {
 }

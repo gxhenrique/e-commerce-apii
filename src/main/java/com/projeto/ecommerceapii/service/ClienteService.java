@@ -9,6 +9,8 @@ import com.projeto.ecommerceapii.mapper.cliente.ClienteMapper;
 import com.projeto.ecommerceapii.repository.ClienteRepository;
 import com.projeto.ecommerceapii.repository.PedidoRepository;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 
@@ -27,6 +29,11 @@ public class ClienteService {
         this.repository = repository;
         this.pedidoRepository = pedidoRepository;
         this.clienteMapper = clienteMapper;
+    }
+
+    public Page<ResponseCLienteDTO> findAll(Integer pagina, Integer itens){
+        Page<Cliente> clientes = repository.findAll(PageRequest.of(pagina,itens));
+        return clientes.map(clienteMapper::toResponse);
     }
 
 
